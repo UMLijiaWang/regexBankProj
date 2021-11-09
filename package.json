@@ -1,0 +1,20 @@
+{
+  "dependencies": {
+    "@google-cloud/storage": "^5.15.5",
+    "axios": "^0.21.4",
+    "btoa": "^1.2.1",
+    "cors": "^2.8.5",
+    "express": "^4.17.1",
+    "fs": "^0.0.1-security",
+    "googleapis": "^85.0.0",
+    "helpers": "^0.0.6",
+    "jquery": "^3.6.0",
+    "jsdom": "^17.0.0",
+    "multer": "^1.4.3",
+    "nodemon": "^2.0.12",
+    "parse-json": "^5.2.0",
+    "path": "^0.12.7",
+    "request": "^2.88.2",
+    "xml-formatter": "^2.4.0"
+  }
+}

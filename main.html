@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>RegEx Tool 1.0</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/png" href="/favicon.ico" />
+    <script src="/js/jquery.min.js" type="text/javascript"></script>
+    <script src="/js/RegExTool_Lookup.js"></script>
+    <!--script src="/app.js"></script-->
+    <style> 
+        .new-select {
+            display: inline-block;
+        }
+    </style>
+</head>
+
+    <body>
+        <div id="layer_1" name="layer_1">
+            <p id="instruction_1" >Step1: Type in the word you are looking for in the text input box below:</p>
+            <br>
+            <textarea  type="text" id="keywordsListInput" name="keywordsListInput" rows="5" cols="20"></textarea> 
+            <br><br>
+            <button id="searchBtn" class="btn" onclick="searchForMeaning()">Search</button>
+            <br>
+            <hr>
+            <div id="layer_2" name="layer_2" hidden>                
+                <p id="instruction_2">Step2: Pick the meaning of the word you prefer. Then click "Next".</p>                
+                <br>
+                <!-- Meaning dropdown list generated in the placeholder below-->
+                <form id="meaningSelectionsPlaceholder"></form>
+                <br>
+                <button id="searchSynsBtn" class="btn" onclick="findSyns()">Next</button>
+                <br>
+                <hr>          
+                <div id="layer_3" name="layer_3" hidden>
+                    
+                    <p>Step3: Select the synonyms you want to include. click "Next" to go the final step.</p>
+                    <br>
+                    <p>Synonyms Choices:</p>
+
+                    <!-- Synonyms words list generated in the placeholder below-->
+                    <ul class="unorderList" id="wordsList" name="wordsList">
+                        
+                    </ul>
+                    <div class="new-select">
+                        <button id="copyBtn" class="btn" onclick="resetCheckboxes()">reset</button>
+                        <button id="copyBtn" class="btn" onclick="findRegExWords()">Next</button>
+                    </div>
+                    <hr>
+                </div>
+            </div>
+            <p>Last Step: Click "copy text to clipboard" to copy the regex.</p>
+            <br>
+            <textarea  type="text" id="finalRegExString" name="finalRegExString" rows="5" cols="20"></textarea>
+            <br><br>
+            <button id="copyBtn" class="btn" onclick="copyToClipboard()">copy text to clipboard</button>
+        </div>        
+    </body>
+</html>
