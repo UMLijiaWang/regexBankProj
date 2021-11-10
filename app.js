@@ -55,8 +55,8 @@ const iniTime = new Date();
 // From ATTools
 var FileName;
 var TheMainScript;
-const ThegoogleApiKey = "AIzaSyAMYBVqDuuazsW1aZYVFi1qejPcP9TSlMQ";
-const GDCredential = "2PACX-1vQjoln3EVwgcx2Rd4K7bGXR4pCpL9v_8o8_8UrY1Y5OZHjUpZoxfq1bw07fBfvRx94YgqALAtAgMY67";
+// const ThegoogleApiKey;
+// const GDCredential ;
 const storage = multer.diskStorage({
     destination: function(req, file, cb) {
         cb(null, "public");
@@ -308,85 +308,85 @@ function writeGS(filelContent, FileName) {
 
 //--------------------------   language paraphrase   ---------------------------------
 //------------------------------------------------------------------------------------
-app.get("/paraphrase", function(req, res) {
-    const theInputJsonStr = req.query.json;
-    // console.log(theInputJsonStr);
-    const theJSON = parseJson(theInputJsonStr);
-    const Theexample = {
-        text: theJSON.source,
-    };
-    const Source = theJSON.lang0;
-    const TheTerminateLang = theJSON.lang;
-    const N = parseInt(theJSON.length);
-    // console.log("Total number of turns: " + N.toString());
-    if (N == 0) {
-        thePath[0] = TheTerminateLang;
-        GetParaphrase(Theexample, TheTerminateLang, 0, N, res);
-        return;
-    } else {
-        getRandomArrayOfLang(N);
-    }
-    thePath.push(TheTerminateLang);
-    TheLog = [];
-    let start = {
-        lang: Source,
-        text: theJSON.source,
-    };
-    TheLog.push(start);
-    // console.log("Here");
-    GetParaphrase(Theexample, TheTerminateLang, 0, N, res);
-});
+// app.get("/paraphrase", function(req, res) {
+//     const theInputJsonStr = req.query.json;
+//     // console.log(theInputJsonStr);
+//     const theJSON = parseJson(theInputJsonStr);
+//     const Theexample = {
+//         text: theJSON.source,
+//     };
+//     const Source = theJSON.lang0;
+//     const TheTerminateLang = theJSON.lang;
+//     const N = parseInt(theJSON.length);
+//     // console.log("Total number of turns: " + N.toString());
+//     if (N == 0) {
+//         thePath[0] = TheTerminateLang;
+//         GetParaphrase(Theexample, TheTerminateLang, 0, N, res);
+//         return;
+//     } else {
+//         getRandomArrayOfLang(N);
+//     }
+//     thePath.push(TheTerminateLang);
+//     TheLog = [];
+//     let start = {
+//         lang: Source,
+//         text: theJSON.source,
+//     };
+//     TheLog.push(start);
+//     // console.log("Here");
+//     GetParaphrase(Theexample, TheTerminateLang, 0, N, res);
+// });
 
-function getRandomArrayOfLang(N) {
-    let i = 0;
-    let Max = Math.min(langList.length - 1, N);
-    let Path = [];
-    let theSelectedLan = "";
-    for (i = 0; i < Max; i++) {
-        do {
-            theSelectedLang = selectRandom(langList);
-            Path.push(theSelectedLang);
-        } while (!Path.includes(theSelectedLang));
-    }
-    thePath = Path;
-}
+// function getRandomArrayOfLang(N) {
+//     let i = 0;
+//     let Max = Math.min(langList.length - 1, N);
+//     let Path = [];
+//     let theSelectedLan = "";
+//     for (i = 0; i < Max; i++) {
+//         do {
+//             theSelectedLang = selectRandom(langList);
+//             Path.push(theSelectedLang);
+//         } while (!Path.includes(theSelectedLang));
+//     }
+//     thePath = Path;
+// }
 
-function selectRandom(TheArray) {
-    let index = Math.floor(Math.random() * TheArray.length);
-    return TheArray[index];
-}
+// function selectRandom(TheArray) {
+//     let index = Math.floor(Math.random() * TheArray.length);
+//     return TheArray[index];
+// }
 
-function GetParaphrase(Text, TerminateLang, i, N, res) {
-    const TJ = require("translate-json-object")();
-    TJ.init({
-        googleApiKey: ThegoogleApiKey,
-    });
-    TJ.translate(Text, thePath[i])
-        .then(function(data) {
-            let LangObj = {
-                lang: thePath[i],
-                text: data.text,
-            };
-            TheLog.push(LangObj);
-            // console.log(TheLog);
-            if (thePath[i] == TerminateLang) {
-                res.type("text/html");
-                res.status(200).end(data.text);
-                return;
-            }
-            if (i < thePath.length) {
-                const index = Math.floor(Math.random() * langList.length);
-                GetParaphrase(data, TerminateLang, i + 1, N, res);
-                // console.log(i.toString()+" - "+targetLang+": "+data.text);
-            } else {
-                GetParaphrase(data, TerminateLang, i + 1, N, res); // last one is English
-                // console.log(i.toString()+" - "+targetLang+": "+data.text);
-            }
-        })
-        .catch(function(err) {
-            // console.log("error ", err);
-        });
-}
+// function GetParaphrase(Text, TerminateLang, i, N, res) {
+//     const TJ = require("translate-json-object")();
+//     TJ.init({
+//         googleApiKey: ThegoogleApiKey,
+//     });
+//     TJ.translate(Text, thePath[i])
+//         .then(function(data) {
+//             let LangObj = {
+//                 lang: thePath[i],
+//                 text: data.text,
+//             };
+//             TheLog.push(LangObj);
+//             // console.log(TheLog);
+//             if (thePath[i] == TerminateLang) {
+//                 res.type("text/html");
+//                 res.status(200).end(data.text);
+//                 return;
+//             }
+//             if (i < thePath.length) {
+//                 const index = Math.floor(Math.random() * langList.length);
+//                 GetParaphrase(data, TerminateLang, i + 1, N, res);
+//                 // console.log(i.toString()+" - "+targetLang+": "+data.text);
+//             } else {
+//                 GetParaphrase(data, TerminateLang, i + 1, N, res); // last one is English
+//                 // console.log(i.toString()+" - "+targetLang+": "+data.text);
+//             }
+//         })
+//         .catch(function(err) {
+//             // console.log("error ", err);
+//         });
+// }
 
 //---------------------------------   Get UUID   -------------------------------------
 //------------------------------------------------------------------------------------
@@ -779,33 +779,33 @@ async function TranscribeSound() {
 
 //-------------------------------- Post to GDrive ------------------------------------
 //------------------------------------------------------------------------------------
-app.post("/PostToDrive", upload.any(), uploadToGoogle);
+// app.post("/PostToDrive", upload.any(), uploadToGoogle);
 
-async function uploadToGoogle(req, res) {
-    LoadTokenandPost(GDCredential, "1", req, res);
-}
+// async function uploadToGoogle(req, res) {
+//     LoadTokenandPost(GDCredential, "1", req, res);
+// }
 
-function LoadTokenandPost(TheLink, sheet, req, res) {
-    const axios = require("axios");
-    const SheetURL =
-        "https://docs.google.com/spreadsheets/d/e/" +
-        TheLink +
-        "/pubhtml";
-    axios
-        .get(SheetURL)
-        .then(function(response) {
-            var outputTable = []
-            outputTable = RemoveHTML(Table2JSON(response, parseInt(sheet)))
-            TheUploading(outputTable[1], req, res);
-        })
-        .catch(function(error) {
-            console.log(error);
-            return ""
-        })
-        .then(function() {
-            return ""
-        });
-}
+// function LoadTokenandPost(TheLink, sheet, req, res) {
+//     const axios = require("axios");
+//     const SheetURL =
+//         "https://docs.google.com/spreadsheets/d/e/" +
+//         TheLink +
+//         "/pubhtml";
+//     axios
+//         .get(SheetURL)
+//         .then(function(response) {
+//             var outputTable = []
+//             outputTable = RemoveHTML(Table2JSON(response, parseInt(sheet)))
+//             TheUploading(outputTable[1], req, res);
+//         })
+//         .catch(function(error) {
+//             console.log(error);
+//             return ""
+//         })
+//         .then(function() {
+//             return ""
+//         });
+// }
 
 const imageFilter = function(req, file, cb) {
     // Accept images only
