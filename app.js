@@ -2,15 +2,20 @@
 const express = require("express");
 const parseJson = require("parse-json");
 const cors = require("cors");
-const request = require("request");
-// const { timers } = require("jquery");
-// const { Endpoint } = require("googleapis-common");
-// const { json } = require("express");
-// const { Tween } = require("jquery");
 const path = require("path");
 const fs = require("fs");
-// const { Module } = require("module");
 
+// New from ATTools
+const request = require("request");
+const format = require("xml-formatter");
+const btoa = require("btoa");
+const multer = require("multer");
+const helpers = require("helpers");
+const {
+    google
+} = require("googleapis");
+
+// RegEx app setting.
 const app = express();
 app.use(express.static("public"));
 app.use(cors());
@@ -20,6 +25,16 @@ app.use('/js', express.static(__dirname + '/js'))
 app.get('/', function(req, res) {
     res.sendFile('main.html', { root: __dirname })
 })
+
+app.options("*", function(req, res, next) {
+    res.header("Access-Control-Allow-Origin", "*");
+    res.header(
+        "Access-Control-Allow-Headers",
+        "Origin, X-Requested-With, Content-Type, Accept"
+    );
+    //other headers here
+    res.status(200).end();
+});
 
 // ==============   Variables area   =================== //
 // Overall Env Setting
@@ -36,6 +51,41 @@ const defaultMeaningIndex = 0; // Pick the 1st meaning encounter found.
 const prefixPubSheetURL = "https://docs.google.com/spreadsheets/d/e/";
 const suffixPubSheetURL = "/pubhtml";
 const iniTime = new Date();
+
+// From ATTools
+var FileName;
+var TheMainScript;
+const ThegoogleApiKey = "AIzaSyAMYBVqDuuazsW1aZYVFi1qejPcP9TSlMQ";
+const GDCredential = "2PACX-1vQjoln3EVwgcx2Rd4K7bGXR4pCpL9v_8o8_8UrY1Y5OZHjUpZoxfq1bw07fBfvRx94YgqALAtAgMY67";
+const storage = multer.diskStorage({
+    destination: function(req, file, cb) {
+        cb(null, "public");
+    },
+
+    // By default, multer removes file extensions so let's add them back
+    filename: function(req, file, cb) {
+        // console.log(file.originalname.split("@")[0]);
+        let TheUserID = file.originalname.split("@")[0];
+        let TheFileName =
+            file.fieldname +
+            "-" +
+            TheUserID +
+            "-" +
+            Date.now() +
+            path.extname(file.originalname);
+        cb(null, TheFileName);
+        FileName = TheFileName;
+    },
+});
+const upload = multer({
+    storage
+});
+let thePath = [];
+let TheLog = [];
+var drive;
+const filePath = path.join(__dirname, "baby.jpg");
+const SoundFile = path.join(__dirname, "Rev.mp3");
+const langList = ["af", "ga", "sq", "it", "ar", "ja", "az", "kn", "eu", "ko", "bn", "la", "be", "lv", "bg", "lt", "ca", "mk", "zh-CN", "ms", "zh-TW", "mt", "hr", "no", "cs", "fa", "da", "pl", "nl", "pt", "en", "ro", "eo", "ru", "et", "sr", "tl", "sk", "fi", "sl", "fr", "es", "gl", "sw", "ka", "sv", "de", "ta", "el", "te", "gu", "th", "ht", "tr", "iw", "uk", "hi", "ur", "hu", "vi", "is", "cy", "id", "yi"];
 
 // Reserved characters and flags
 const keyCharList = ["\\", "^", "$", ".", "|", "?", "*", "+", "(", ")", "[", "]", "{", "}"];
@@ -67,11 +117,704 @@ const reservedFlag = ["i", "x", "M"]; // Flag name reserved for special purpose.
 //------------------------------------------------------------------------------------
 var testMode = false;
 if (testMode) {
-
     jsonStringProcess("\{\"word\":\"/AC\\w+\/i\"\}");
-
     return;
 }
+
+//====================================================================================
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>    ATTools    <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//------------------------------------------------------------------------------------
+
+async function uploadFile(FileName, res) {
+    const filePath = path.join(__dirname, "./public/" + FileName);
+    try {
+        let TheMimeType = "image/png";
+        if (FileName.split(".")[1] == "wav") {
+            TheMimeType = "audio/wav";
+        }
+        const response = await drive.files.create({
+            requestBody: {
+                name: FileName,
+                mimeType: TheMimeType,
+            },
+            media: {
+                mimeType: TheMimeType,
+                body: fs.createReadStream(filePath),
+            },
+        });
+        const thefileID = response.data.id;
+        generatePublicUrl(thefileID, res);
+    } catch (error) {
+        // console.log("=====uploadFile=======");
+        // console.log(error.message);
+        // console.log("=====uploadFile=======");
+    }
+}
+
+async function generatePublicUrl(thefileID, res) {
+    try {
+        await drive.permissions.create({
+            fileId: thefileID,
+            requestBody: {
+                role: "reader",
+                type: "anyone",
+            },
+        });
+        const result = await drive.files.get({
+            fileId: thefileID,
+            fields: "webViewLink,webContentLink",
+        });
+        res.type("text/html");
+        var filePath = "./public/" + FileName;
+        fs.unlinkSync(filePath);
+        res.status(200).end(JSON.stringify(result.data));
+    } catch (error) {
+        // console.log("=====generatePublicUrl=======");
+        // console.log(error.message);
+        // console.log("=====generatePublicUrl=======");
+    }
+}
+
+//====================================================================================
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>    GET    <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//--------------------------------  Get GS table  ------------------------------------
+//------------------------------------------------------------------------------------
+app.get("/gs", GetGS);
+
+function GetGS(req, res) {
+    const axios = require("axios");
+    const theInputJsonStr = req.query.json;
+    const theJSON = parseJson(theInputJsonStr);
+    const SheetID = theJSON.id;
+    const Sheet = theJSON.page;
+    const filename = SheetID + "." + Sheet + ".json";
+    const theFilePath = path.join(__dirname, "./public/" + filename);
+    const Pub = theJSON.Pub;
+    if (Pub == "1") {
+        console.log(">> Get Published version")
+        readGS(req, res, theFilePath);
+    } else {
+        console.log(">> The Development Version")
+        GetGSFromGoogle(req, res);
+    }
+}
+
+function readGS(req, res, filename) {
+    if (!fs.existsSync(filename)) {
+        console.log("getGS form Google Sheet")
+        GetGSFromGoogle(req, res);
+    } else {
+        console.log("Read from saved");
+        var obj = JSON.parse(fs.readFileSync(filename, 'utf8'));
+        res.setHeader("Content-Type", "application/json");
+        res.status(200).end(JSON.stringify(obj));
+    }
+}
+
+function GetGSFromGoogle(req, res) {
+
+    const axios = require("axios");
+    const theInputJsonStr = req.query.json;
+    const theJSON = parseJson(theInputJsonStr);
+    const SheetID = theJSON.id;
+    const Sheet = theJSON.page;
+    const filename = SheetID + "." + Sheet + ".json";
+    const theFilePath = path.join(__dirname, "./public/" + filename);
+    const SheetURL =
+        "https://docs.google.com/spreadsheets/d/e/" +
+        SheetID +
+        "/pubhtml";
+    axios
+        .get(SheetURL)
+        .then(function(response) {
+            // handle success
+            var TheJSON = RemoveHTML(Table2JSON(response, parseInt(Sheet)));
+
+            var fileContent = JSON.stringify(TheJSON);
+            writeGS(fileContent, theFilePath);
+            console.log("saving the GSTAble")
+
+            res.setHeader("Content-Type", "application/json");
+            res.status(200).end(fileContent);
+        })
+        .catch(function(error) {
+            // handle error
+            let date = new Date();
+            console.log(date + ":  " + "error GetGS " + SheetURL);
+            //     GetGS(req, res);
+        })
+        .then(function() {
+            // always executed
+        });
+
+}
+
+function Table2JSON(Thetable, page) {
+    var htmlPages = Thetable.data.split("<table ");
+    var i;
+    var TheTables = []
+    for (i = 0; i < htmlPages.length; i++) {
+        TheTables.push("<table " + htmlPages[i].split("</table>") + "</table>")
+    }
+
+    if (page == 0) {
+        page = 1
+    }
+    if (page > htmlPages.length - 1) {
+        page = htmlPages - 1;
+    }
+
+    var ThePageSelected = TheTables[page];
+    const {
+        JSDOM
+    } = require("jsdom");
+    var TheRealTable = ThePageSelected;
+    const {
+        window
+    } = new JSDOM(TheRealTable);
+    const $ = require("jquery")(window);
+
+    var $table = $("table"),
+        rows = [],
+        header = [];
+    var firstRun = 0;
+    $table.find("tbody tr").each(function() {
+        var row = {};
+        if (firstRun == 0) {
+            $(this).find("td").each(function() {
+                header.push($(this).html());
+            });
+            firstRun = firstRun + 1;
+        }
+        $(this).find("td").each(function(i) {
+            var key = header[i],
+                value = $(this).html();
+            row[key] = value;
+        });
+        rows.push(row);
+    });
+    return rows;
+}
+
+function writeGS(filelContent, FileName) {
+    var fs = require('fs');
+    fs.writeFile(FileName, filelContent, function(err) {
+        if (err) {
+            return console.log(err);
+        }
+        console.log("The file was saved!");
+    });
+}
+
+//--------------------------   language paraphrase   ---------------------------------
+//------------------------------------------------------------------------------------
+app.get("/paraphrase", function(req, res) {
+    const theInputJsonStr = req.query.json;
+    // console.log(theInputJsonStr);
+    const theJSON = parseJson(theInputJsonStr);
+    const Theexample = {
+        text: theJSON.source,
+    };
+    const Source = theJSON.lang0;
+    const TheTerminateLang = theJSON.lang;
+    const N = parseInt(theJSON.length);
+    // console.log("Total number of turns: " + N.toString());
+    if (N == 0) {
+        thePath[0] = TheTerminateLang;
+        GetParaphrase(Theexample, TheTerminateLang, 0, N, res);
+        return;
+    } else {
+        getRandomArrayOfLang(N);
+    }
+    thePath.push(TheTerminateLang);
+    TheLog = [];
+    let start = {
+        lang: Source,
+        text: theJSON.source,
+    };
+    TheLog.push(start);
+    // console.log("Here");
+    GetParaphrase(Theexample, TheTerminateLang, 0, N, res);
+});
+
+function getRandomArrayOfLang(N) {
+    let i = 0;
+    let Max = Math.min(langList.length - 1, N);
+    let Path = [];
+    let theSelectedLan = "";
+    for (i = 0; i < Max; i++) {
+        do {
+            theSelectedLang = selectRandom(langList);
+            Path.push(theSelectedLang);
+        } while (!Path.includes(theSelectedLang));
+    }
+    thePath = Path;
+}
+
+function selectRandom(TheArray) {
+    let index = Math.floor(Math.random() * TheArray.length);
+    return TheArray[index];
+}
+
+function GetParaphrase(Text, TerminateLang, i, N, res) {
+    const TJ = require("translate-json-object")();
+    TJ.init({
+        googleApiKey: ThegoogleApiKey,
+    });
+    TJ.translate(Text, thePath[i])
+        .then(function(data) {
+            let LangObj = {
+                lang: thePath[i],
+                text: data.text,
+            };
+            TheLog.push(LangObj);
+            // console.log(TheLog);
+            if (thePath[i] == TerminateLang) {
+                res.type("text/html");
+                res.status(200).end(data.text);
+                return;
+            }
+            if (i < thePath.length) {
+                const index = Math.floor(Math.random() * langList.length);
+                GetParaphrase(data, TerminateLang, i + 1, N, res);
+                // console.log(i.toString()+" - "+targetLang+": "+data.text);
+            } else {
+                GetParaphrase(data, TerminateLang, i + 1, N, res); // last one is English
+                // console.log(i.toString()+" - "+targetLang+": "+data.text);
+            }
+        })
+        .catch(function(err) {
+            // console.log("error ", err);
+        });
+}
+
+//---------------------------------   Get UUID   -------------------------------------
+//------------------------------------------------------------------------------------
+app.get("/uuid", function(req, res) {
+    const theInputJsonStr = req.query.json;
+    const theJSON = parseJson(theInputJsonStr);
+    const theText = theJSON.str;
+    const uuidv5 = require("uuid/v5");
+    const MY_NAMESPACE = "1b671a64-40d5-491e-99b0-da01ff1f3341";
+    // console.log(theText);
+    res.type("application/json");
+    let OutputObj = {
+        uuid: uuidv5(theText, MY_NAMESPACE),
+        namespace: MY_NAMESPACE,
+    };
+    res.status(200).end(JSON.stringify(OutputObj));
+});
+
+
+//---------------------------------   Generate   -------------------------------------
+//------------------------------------------------------------------------------------
+app.get("/generate", generate);
+
+function generate(req, res) {
+    const theInputJsonStr = req.query.json;
+    const theJSON = parseJson(theInputJsonStr);
+    const TheReplacingTag = theJSON.TheTag;
+    if (TheReplacingTag != "") {
+        RetriveAndMergeTwoScripts(req, res, "", true);
+        return;
+    }
+    console.log("===> Use Original")
+    GenerateScriptsWithReplacement("", "", req, res);
+}
+
+function RetriveAndMergeTwoScripts(req, res, BaseScript, base) {
+
+    const theInputJsonStr = req.query.json;
+    const theJSON = parseJson(theInputJsonStr);
+    const asatlrs = theJSON.theASTALRS;
+    const theAsatLRSLogin = theJSON.theASTALRSLogin;
+    const theAsatLRSPassword = theJSON.theASTALRSPassword;
+
+    const TheTag = theJSON.TheTag;
+
+    let theAuthorization = theJSON.theAuthorization;
+    if (theAuthorization == "") {
+        theAuthorization = btoa(theAsatLRSLogin + ":" + theAsatLRSPassword);
+    }
+    let jsonforID;
+    let Thebase = theJSON.guid;
+    let Tamplate = theJSON.ATDR;
+
+    let Match;
+    if (base) {
+        Match = {
+            "statement.result.response": Thebase
+        }
+    } else {
+        Match = {
+            "statement.result.response": Tamplate
+        }
+    }
+    let Project1 = {
+        ext: "$statement.result.extensions.http://asat.autotutor.org/scripts",
+        guid: "$statement.result.response"
+    };
+    let Project2 = {
+        script: "$ext.script",
+        guid: "$guid"
+    };
+    let sort = {
+        "statement.timestamp": -1
+    };
+    let limit = 1;
+
+    jsonforID = [{
+            $match: Match
+        },
+        {
+            $sort: sort
+        },
+        {
+            $limit: limit
+        },
+        {
+            $project: Project1
+        },
+        {
+            $project: Project2
+        },
+    ];
+    const URL = asatlrs + "/statements/aggregate";
+    const settings = {
+        url: URL,
+        method: "POST",
+        headers: {
+            Authorization: "Basic " + theAuthorization,
+            "x-experience-api-version": "1.0.0",
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify(jsonforID),
+    };
+    //  console.log(JSON.stringify(jsonforID));
+    request(settings, function(error, response, body) {
+        let OutPutXML;
+        if (error) {
+            // console.log("Error found");
+            throw new Error(error);
+            return;
+        }
+        const returnjson = JSON.parse(body);
+        if (base) {
+            RetriveAndMergeTwoScripts(req, res, returnjson[0], !base)
+        } else {
+            MergeTwoScripts(req, res, BaseScript, returnjson[0])
+        }
+    });
+}
+
+function MergeTwoScripts(req, res, BaseScript, Template) {
+    const theInputJsonStr = req.query.json;
+    const theJSON = parseJson(theInputJsonStr);
+    const tag = theJSON.tag;
+    const ReplacingComponents = theJSON.TheTag
+    let ReplacingTageArray = ReplacingComponents.split(",")
+    console.log(">>> ReplacingComponents:" + ReplacingTageArray.length)
+    console.log(">>> Base GUID:" + BaseScript.guid)
+    console.log(">>> Template GUID:" + Template.guid)
+
+    let TheBaseScript = BaseScript.script[tag];
+    let TheTemplateScript = Template.script[tag];
+    for (var i = 0; i < ReplacingTageArray.length; i++) {
+        TheBaseScript[ReplacingTageArray[i]] = TheTemplateScript[ReplacingTageArray[i]];
+    }
+    //  console.log(TheBaseScript.Agents);
+    let OutPutXML;
+    OutPutXML = CombineScripts(tag, TheBaseScript);
+    // console.log(OutPutXML);
+    res.type("application/xml");
+    res.status(200).end(format(OutPutXML));
+}
+
+function CombineScripts(tag, xmlStr) {
+    let OutPutXML;
+    var TheATScripts = "";
+    TheATScripts = TheATScripts + "<AutoTutorScript>";
+    TheATScripts = TheATScripts + Extracting("Agents", xmlStr);
+    TheATScripts = TheATScripts + Extracting("ASATPageConfigration", xmlStr);
+    TheATScripts = TheATScripts + Extracting("SpeechActs", xmlStr);
+    TheATScripts = TheATScripts + Extracting("RigidPacks", xmlStr);
+    TheATScripts = TheATScripts + Extracting("Rules", xmlStr);
+    TheATScripts = TheATScripts + Extracting("TutoringPacks", xmlStr);
+    TheATScripts = TheATScripts + "</AutoTutorScript>";
+
+    if (tag == "AutoTutorScript") {
+        OutPutXML = TheATScripts;
+    } else if (tag == "ID") {
+        OutPutXML = Extracting("ID", xmlStr);
+    } else if (tag == "LoM") {
+        OutPutXML = Extracting("ScriptsLOM", xmlStr);
+    } else if (tag == "SKOConfig") {
+        OutPutXML = Extracting("SKOConfig", xmlStr);
+    } else {
+        OutPutXML = "<SKOSCRIPTS>" + Extracting("ID", xmlStr);
+        OutPutXML = OutPutXML + Extracting("ScriptsLOM", xmlStr);
+        OutPutXML = OutPutXML + Extracting("SKOConfig", xmlStr);
+        OutPutXML = OutPutXML + TheATScripts;
+        OutPutXML = OutPutXML + "</SKOSCRIPTS>";
+    }
+    return OutPutXML;
+}
+
+function Extracting(Tag, json) {
+    return json[Tag]
+}
+
+function GenerateScriptsWithReplacement(Replacingtag, Content, req, res) {
+    const theInputJsonStr = req.query.json;
+    const theJSON = parseJson(theInputJsonStr);
+    const tag = theJSON.tag;
+    const asatlrs = theJSON.theASTALRS;
+    const theAsatLRSLogin = theJSON.theASTALRSLogin;
+    const theAsatLRSPassword = theJSON.theASTALRSPassword;
+    let theAuthorization = theJSON.theAuthorization;
+    if (theAuthorization == "") {
+        theAuthorization = btoa(theAsatLRSLogin + ":" + theAsatLRSPassword);
+    }
+
+    const guid = theJSON.guid;
+    const lrsid = theJSON.lrsid;
+
+    const useGUID = guid != null;
+    const useLRSID = lrsid != null;
+
+    let jsonforID;
+    if (useGUID) {
+        jsonforID = [{
+                $match: {
+                    "statement.result.response": guid,
+                },
+            },
+            {
+                $sort: {
+                    "statement.timestamp": -1,
+                },
+            },
+            {
+                $limit: 1,
+            },
+            {
+                $project: {
+                    ext: "$statement.result.extensions.http://asat.autotutor.org/scripts",
+                },
+            },
+            {
+                $project: {
+                    script: "$ext.script",
+                },
+            },
+        ];
+    } else if (useLRSID) {
+        jsonforID = [{
+                $match: {
+                    "statement.id": lrsid,
+                },
+            },
+            {
+                $project: {
+                    ext: "$statement.result.extensions.http://asat.autotutor.org/scripts",
+                },
+            },
+            {
+                $project: {
+                    script: "$ext.script",
+                },
+            },
+        ];
+    }
+
+    const URL = asatlrs + "/statements/aggregate";
+    const settings = {
+        url: URL,
+        method: "POST",
+        headers: {
+            Authorization: "Basic " + theAuthorization,
+            "x-experience-api-version": "1.0.0",
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify(jsonforID),
+    };
+    request(settings, function(error, response, body) {
+        let OutPutXML;
+        if (error) {
+            // console.log("Error found");
+            throw new Error(error);
+        }
+        const returnjson = JSON.parse(body);
+        const xmlStr = returnjson[0].script;
+        // console.log(xmlStr)
+        if ((Replacingtag == "") || (Content == "")) {
+            let TheOutPutXML = GetXMLComponents(tag, xmlStr);
+            res.type("application/xml");
+            res.status(200).end(format(TheOutPutXML));
+            return;
+        }
+
+        OutPutXML = ReplaceWithComponents(tag, Replacingtag, Content, xmlStr);
+        res.type("application/xml");
+        res.status(200).end(format(OutPutXML));
+    });
+}
+
+function GetXMLComponents(tag, body) {
+
+    var TheATScripts = "";
+    TheATScripts = TheATScripts + "<AutoTutorScript>";
+    TheATScripts = TheATScripts + body.AutoTutorScript.Agents;
+    TheATScripts = TheATScripts + body.AutoTutorScript.ASATPageConfigration;
+    TheATScripts = TheATScripts + body.AutoTutorScript.SpeechActs;
+    TheATScripts = TheATScripts + body.AutoTutorScript.RigidPacks;
+    TheATScripts = TheATScripts + body.AutoTutorScript.TutoringPacks;
+    TheATScripts = TheATScripts + body.AutoTutorScript.Rules;
+    TheATScripts = TheATScripts + "</AutoTutorScript>";
+
+    if (tag == "AutoTutorScript") {
+        OutPutXML = TheATScripts;
+    } else if (tag == "ID") {
+        OutPutXML = body.ID;
+    } else if (tag == "LoM") {
+        OutPutXML = body.ScriptsLOM;
+    } else if (tag == "SKOConfig") {
+        OutPutXML = body.SKOConfig;
+    } else {
+        OutPutXML = "<SKOSCRIPTS>";
+        OutPutXML = OutPutXML + body.ID;
+        OutPutXML = OutPutXML + body.ScriptsLOM;
+        OutPutXML = OutPutXML + body.SKOConfig;
+        OutPutXML = OutPutXML + TheATScripts;
+        OutPutXML = OutPutXML + "</SKOSCRIPTS>";
+    }
+    return OutPutXML;
+}
+
+function ReplaceWithComponents(tag, Replacingtag, Content, xmlStr) {
+    let OutPutXML;
+    var TheATScripts = "";
+    TheATScripts = TheATScripts + "<AutoTutorScript>";
+    TheATScripts = TheATScripts + replacing(Replacingtag, "Agents", Content, xmlStr.AutoTutorScript);
+    TheATScripts = TheATScripts + replacing(Replacingtag, "ASATPageConfigration", Content, xmlStr.AutoTutorScript);
+    TheATScripts = TheATScripts + replacing(Replacingtag, "SpeechActs", Content, xmlStr.AutoTutorScript);
+    TheATScripts = TheATScripts + replacing(Replacingtag, "RigidPacks", Content, xmlStr.AutoTutorScript);
+    TheATScripts = TheATScripts + replacing(Replacingtag, "Rules", Content, xmlStr.AutoTutorScript);
+    TheATScripts = TheATScripts + replacing(Replacingtag, "TutoringPacks", Content, xmlStr.AutoTutorScript);
+    TheATScripts = TheATScripts + "</AutoTutorScript>";
+
+    if (tag == "AutoTutorScript") {
+        OutPutXML = TheATScripts;
+    } else if (tag == "ID") {
+        OutPutXML = replacing(Replacingtag, "ID", Content, xmlStr);
+    } else if (tag == "LoM") {
+        OutPutXML = replacing(Replacingtag, "ScriptsLOM", Content, xmlStr);
+    } else if (tag == "SKOConfig") {
+        OutPutXML = replacing(Replacingtag, "SKOConfig", Content, xmlStr);
+    } else {
+        OutPutXML = "<SKOSCRIPTS>" + replacing(Replacingtag, "ID", Content, xmlStr);
+        OutPutXML = OutPutXML + replacing(Replacingtag, "ScriptsLOM", Content, xmlStr);
+        OutPutXML = OutPutXML + replacing(Replacingtag, "SKOConfig", Content, xmlStr);
+        OutPutXML = OutPutXML + TheATScripts;
+        OutPutXML = OutPutXML + "</SKOSCRIPTS>";
+    }
+    return OutPutXML;
+}
+
+function replacing(ReplacingTag, Tag, Content, json) {
+    const TheReplacingTag = ReplacingTag;
+    const TheTag = Tag;
+    if (TheReplacingTag == TheTag) {
+        return Content;
+    } else {
+        return json[Tag];
+    }
+}
+
+
+//====================================================================================
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>    POST    <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//-------------------------------- Text to Speech ------------------------------------
+//------------------------------------------------------------------------------------
+app.post("/upload_sound", upload.any(), async(req, res) => {
+    // console.log("Getting text transcription..");
+    let transcription = await testGoogleTextToSpeech(req.files[0].buffer);
+    // console.log("Text transcription: " + transcription);
+    res.status(200).send(transcription);
+});
+
+async function testGoogleTextToSpeech(audioBuffer) {
+    const speech = require("@google-cloud/speech");
+    const client = new speech.SpeechClient({
+        keyFilename: "autotutormoodle-a92b4c7de543.json",
+    });
+
+    const audio = {
+        content: audioBuffer.toString("base64"),
+    };
+    const config = {
+        languageCode: "en-US",
+    };
+    const request = {
+        audio: audio,
+        config: config,
+    };
+
+    const [response] = await client.recognize(request);
+    const transcription = response.results
+        .map((result) => result.alternatives[0].transcript)
+        .join("\n");
+    return transcription;
+}
+
+async function TranscribeSound() {
+    try {
+        // console.log("Getting text transcription..");
+        let transcription = await testGoogleTextToSpeech(SoundFile);
+        // console.log("Text transcription: " + transcription);
+    } catch (error) {
+        // console.log(error.message);
+    }
+}
+
+//-------------------------------- Post to GDrive ------------------------------------
+//------------------------------------------------------------------------------------
+app.post("/PostToDrive", upload.any(), uploadToGoogle);
+
+async function uploadToGoogle(req, res) {
+    LoadTokenandPost(GDCredential, "1", req, res);
+}
+
+function LoadTokenandPost(TheLink, sheet, req, res) {
+    const axios = require("axios");
+    const SheetURL =
+        "https://docs.google.com/spreadsheets/d/e/" +
+        TheLink +
+        "/pubhtml";
+    axios
+        .get(SheetURL)
+        .then(function(response) {
+            var outputTable = []
+            outputTable = RemoveHTML(Table2JSON(response, parseInt(sheet)))
+            TheUploading(outputTable[1], req, res);
+        })
+        .catch(function(error) {
+            console.log(error);
+            return ""
+        })
+        .then(function() {
+            return ""
+        });
+}
+
+const imageFilter = function(req, file, cb) {
+    // Accept images only
+    if (!file.originalname.match(/\.(jpg|JPG|jpeg|JPEG|png|PNG|gif|GIF)$/)) {
+        req.fileValidationError = "Only image files are allowed!";
+        return cb(new Error("Only image files are allowed!"), false);
+    }
+    cb(null, true);
+};
 
 //====================================================================================
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>    To do List    <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -1219,6 +1962,26 @@ function regexTable2JSON(table, page) {
     return rows;
 }
 
+//From ATTools
+function RemoveHTML(JSONIn) {
+    var JSONOut = [];
+    for (var i = 0; i < JSONIn.length; i++) {
+        var theObj = JSONIn[i];
+        var TheOutputobj = {};
+        for (var Key in theObj) {
+            TheOutputobj[removehtml(Key)] = removehtml(theObj[Key]);
+        }
+        JSONOut.push(TheOutputobj);
+    }
+    return JSONOut;
+}
+
+function removehtml(str) {
+    return str.replace(/<\/?[\w\s]*>|<.+[\W]>/g, '');
+}
+
+exports.imageFilter = imageFilter;
+
 /**
  * Set port number for REST api listening.
  */
@@ -1227,3 +1990,5 @@ app.listen(PORT, () => {
     console.log(`App listening on port ${PORT}`);
     console.log("Press Ctrl+C to quit.");
 });
+
+module.exports = app;
