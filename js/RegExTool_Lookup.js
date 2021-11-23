@@ -7,7 +7,8 @@
 //====================================================================================
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>    To do List    <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 //------------------------------------------------------------------------------------
-const toolURLBase = "http://localhost:8080";
+const toolURLBaseTEST = "http://localhost:8080";
+const toolURLBase = "http://35.222.41.130:8080/";
 const methodWordMeaning = "wordMeaning";
 const methodWordSynonym = "wordSyn";
 const methodWordRegEx = "wordRegex";
@@ -27,12 +28,12 @@ const methodSimWordRegEx = "simWordRegEx";
  * Obtain the keywords and return the meaning of the words, and make dropdown list.
  */
 function searchForMeaning() {
-    const toolURLBase = "http://localhost:8080/wordMeaning";
+    const urlBase = toolURLBase+methodWordMeaning;
     let inputString = document.getElementById("keywordsListInput").value;
     jsonObj = {
         'word': encodeURIComponent(inputString)
     }
-    urlString = toolURLBase + "?json=" + JSON.stringify(jsonObj)
+    urlString = urlBase + "?json=" + JSON.stringify(jsonObj)
         // console.log(urlString);
 
     let meaningList = "";
@@ -79,12 +80,12 @@ function findSyns() {
     let meaningIndexSelected = document.getElementById("meaningSelections").selectedOptions[0].index;
     let wordString = document.getElementById("keywordsListInput").value;
 
-    const toolURLBase = "http://localhost:8080/wordSyn";
+    const urlBase = toolURLBase + methodWordSynonym;
     jsonObj = {
         'word': encodeURIComponent(wordString),
         'meaning': meaningIndexSelected
     }
-    urlString = toolURLBase + "?json=" + JSON.stringify(jsonObj)
+    urlString = urlBase + "?json=" + JSON.stringify(jsonObj)
 
     let targetArray = "";
     $.ajax({
@@ -147,8 +148,8 @@ function findRegExWords() {
 
     console.log(tempObj);
 
-    const toolURLBase = "http://localhost:8080/simWordRegEx";
-    let urlString = toolURLBase + "?json=" + JSON.stringify(tempObj);
+    const urlBase = toolURLBase + "simWordRegEx";
+    let urlString = urlBase + "?json=" + JSON.stringify(tempObj);
     console.log(urlString);
 
     let resultString = "";
