@@ -7,8 +7,8 @@
 //====================================================================================
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>    To do List    <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 //------------------------------------------------------------------------------------
-const toolURLBaseTEST = "http://localhost:8080";
-const toolURLBase = "http://35.222.41.130:80/";
+const toolURLBase = "http://localhost:8080/";
+// const toolURLBase = "http://35.222.41.130:80/";
 const methodWordMeaning = "wordMeaning";
 const methodWordSynonym = "wordSyn";
 const methodWordRegEx = "wordRegex";
