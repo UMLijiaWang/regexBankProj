@@ -7,27 +7,37 @@
 //====================================================================================
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>    To do List    <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 //------------------------------------------------------------------------------------
-const toolURLBase = "http://localhost:8080/";
-// const toolURLBase = "http://35.222.41.130:80/";
+
+
+//====================================================================================
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>    Env Setting    <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//------------------------------------------------------------------------------------
+const toolGCPURLBase = "http://35.223.196.13:"; // Update the Google Cloud VM IP address here.
+const localPort = "8080";
+
 const methodWordMeaning = "wordMeaning";
 const methodWordSynonym = "wordSyn";
 const methodWordRegEx = "wordRegex";
 const methodSimWordRegEx = "simWordRegEx";
 
 //====================================================================================
-// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>    Env Setting    <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-//------------------------------------------------------------------------------------
-
-
-//====================================================================================
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>    Function Area    <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 //------------------------------------------------------------------------------------
+
+// first confirm the toolURLBase based on the bln LocalHost.
+function toolURLBaseLocater() {
+    checkConfig()
+    toolURLBase = blnLocalhost?"http://localhost:":toolGCPURLBase
+    portNbr = blnLocalhost?localPort:"8080"
+    toolURLBase = toolURLBase + portNbr + "/"
+}
 
 /**
  * Step 1:
  * Obtain the keywords and return the meaning of the words, and make dropdown list.
  */
 function searchForMeaning() {
+    toolURLBaseLocater()
     const urlBase = toolURLBase+methodWordMeaning;
     let inputString = document.getElementById("keywordsListInput").value;
     jsonObj = {

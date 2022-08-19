@@ -1,39 +1,42 @@
 {
-    "dependencies": {
-        "@google-cloud/storage": "^5.15.5",
-        "axios": "^0.21.4",
-        "btoa": "^1.2.1",
-        "cors": "^2.8.5",
-        "express": "^4.17.1",
-        "fs": "^0.0.1-security",
-        "googleapis": "^85.0.0",
-        "helpers": "^0.0.6",
-        "jquery": "^3.6.0",
-        "jsdom": "^17.0.0",
-        "multer": "^1.4.3",
-        "nodemon": "^2.0.12",
-        "parse-json": "^5.2.0",
-        "path": "^0.12.7",
-        "request": "^2.88.2",
-        "xml-formatter": "^2.4.0"
-    },
-    "name": "regexbank_ver_1.0",
-    "description": "This is the regexBank used for project purpose.",
-    "version": "1.0.0",
-    "main": "app.js",
-    "devDependencies": {},
-    "scripts": {
-        "start": "node app.js",
-        "test": "echo \"Error: no test specified\" && exit 1"
-    },
-    "repository": {
-        "type": "git",
-        "url": "git+https://github.com/UMLijiaWang/regexBank_Ver_1.0.git"
-    },
-    "author": "Lijia Wang",
-    "license": "ISC",
-    "bugs": {
-        "url": "https://github.com/UMLijiaWang/regexBank_Ver_1.0/issues"
-    },
-    "homepage": "https://github.com/UMLijiaWang/regexBank_Ver_1.0#readme"
+  "dependencies": {
+    "@google-cloud/storage": "^5.15.5",
+    "axios": "^0.21.4",
+    "btoa": "^1.2.1",
+    "cors": "^2.8.5",
+    "express": "^4.17.1",
+    "fs": "^0.0.1-security",
+    "googleapis": "^85.0.0",
+    "helpers": "^0.0.6",
+    "jquery": "^3.6.0",
+    "jsdom": "^17.0.0",
+    "multer": "^1.4.3",
+    "nodemon": "^2.0.12",
+    "parse-json": "^5.2.0",
+    "path": "^0.12.7",
+    "request": "^2.65.0",
+    "xml-formatter": "^2.4.0"
+  },
+  "name": "toolsforsko",
+  "description": "This is the regexBank used for project purpose.",
+  "version": "1.0.0",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/xiangenhu/toolsforsko.git"
+  },
+  "author": "Lijia Wang",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/xiangenhu/toolsforsko/issues"
+  },
+  "homepage": "https://github.com/xiangenhu/toolsforsko#readme",
+  "devDependencies": {},
+  "keywords": [
+    "regexbank"
+  ]
 }

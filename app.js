@@ -1,30 +1,32 @@
-// nodeJS import packages
-const express = require("express");
-const parseJson = require("parse-json");
-const cors = require("cors");
-const path = require("path");
-const fs = require("fs");
+// Use code 'npm init' to update the package.json and fix the vulnerabilities.
+// Use code 'npm install' to install the package based on the info in the package.json. Do that when you pull to a new location
+// Use code 'npm start' to start the server
 
-// New from ATTools
-const request = require("request");
-const format = require("xml-formatter");
-const btoa = require("btoa");
-const multer = require("multer");
-const helpers = require("helpers");
+/*
+ * ==== nodeJS import packages ================================================================ 
+ */
+const express = require("express");                     // Package to provide small, robust tooling for HTTP servers, making it a great solution for single page applications, web sites, hybrids, or public HTTP APIs.
+const parseJson = require("parse-json");                // Package to Parse JSON with more helpful errors
+const cors = require("cors");                           // Package providing a Connect/Express middleware that can be used to enable CORS with various options.
+const path = require("path");                           // Package provides a lot of very useful functionality to access and interact with the file system.
+const fs = require("fs");                               // Package built-in Node. js file system module helps us store, access, and manage data on our operating system
+const request = require("request");                     // This package has been deprecated Feb. 11th, 2020
+const format = require("xml-formatter");                // Package Converts XML into a human readable format (pretty print) while respecting the xml:space attribute.
+const btoa = require("btoa");                           // Package It turns binary data to base64-encoded ascii. （Binary to Ascii)
+const multer = require("multer");                       // Package middleware for handling multipart/form-data, which is primarily used for uploading files.
+const helpers = require("helpers");                     // Package Node.js methods to help in getting paths relative to current script and in requiring relative modules
 const {
     google
-} = require("googleapis");
+} = require("googleapis");                              // Package client library for using Google APIs. Support for authorization and authentication with OAuth 2.0, API Keys and JWT tokens is included.
 
-// RegEx app setting.
+/*
+ * ==== SKO app setting ================================================================ 
+ */
 const app = express();
-app.use(express.static("public"));
-app.use(cors());
-app.use('/', express.static(__dirname));
-app.use('/js', express.static(__dirname + '/js'))
-
-app.get('/', function(req, res) {
-    res.sendFile('main.html', { root: __dirname })
-})
+app.use(express.static("public"));                      // 
+app.use(cors());                                        // Enable CORS
+app.use('/', express.static(__dirname));                // point root to the URL
+app.use('/js', express.static(__dirname + '/js'))       // Point to /js for what? suggest to remove it.
 
 app.options("*", function(req, res, next) {
     res.header("Access-Control-Allow-Origin", "*");
@@ -36,14 +38,16 @@ app.options("*", function(req, res, next) {
     res.status(200).end();
 });
 
-// ==============   Variables area   =================== //
+/*
+ * ==== Variables area ================================================================ 
+ */
 // Overall Env Setting
 var debugMode = false;
 
 // RegEx Bank default setting
-const defaultRegExBankID_old = "2PACX-1vRoq86tBqQua-EvtumRaSu7m8Qb32gUZ8SZfcFvYvRZWb31zo9tbO7wiMSiKC0Ms87nqZEf5D1CSMAo"; // the original regex bank
-const defaultRegExBankID = "2PACX-1vR_VCPZO38JtcM6gpj8Gnj6vDzsMN1c6gDTCs2TbWfg08KGounBktIxUX3ntQKCl04MZLpFQRzzDF-J"; // the copy of regex bank with meaning included.
-const defaultRegExBankPageNum = "1";
+const defaultRegExBankID_old = "2PACX-1vRoq86tBqQua-EvtumRaSu7m8Qb32gUZ8SZfcFvYvRZWb31zo9tbO7wiMSiKC0Ms87nqZEf5D1CSMAo"; // the Publish ID of the original regex bank
+const defaultRegExBankID = "2PACX-1vR_VCPZO38JtcM6gpj8Gnj6vDzsMN1c6gDTCs2TbWfg08KGounBktIxUX3ntQKCl04MZLpFQRzzDF-J"; // the Publish ID of the copy of regex bank with meaning included.
+const defaultRegExBankPageNum = "1"; // Default sheet number in the target spreadsheet
 const defaultRegExDomain = ""; // "" means all the available domains will be searched.
 const defaultMeaningIndex = 0; // Pick the 1st meaning encounter found.
 
@@ -55,8 +59,8 @@ const iniTime = new Date();
 // From ATTools
 var FileName;
 var TheMainScript;
-// const ThegoogleApiKey;
-// const GDCredential ;
+const ThegoogleApiKey = "AIzaSyAMYBVqDuuazsW1aZYVFi1qejPcP9TSlMQ";
+const GDCredential = "2PACX-1vQjoln3EVwgcx2Rd4K7bGXR4pCpL9v_8o8_8UrY1Y5OZHjUpZoxfq1bw07fBfvRx94YgqALAtAgMY67";
 const storage = multer.diskStorage({
     destination: function(req, file, cb) {
         cb(null, "public");
@@ -115,11 +119,12 @@ const reservedFlag = ["i", "x", "M"]; // Flag name reserved for special purpose.
 //====================================================================================
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>    TEST Area     <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 //------------------------------------------------------------------------------------
-var testMode = false;
-if (testMode) {
-    jsonStringProcess("\{\"word\":\"/AC\\w+\/i\"\}");
-    return;
-}
+
+// var testMode = false;
+// if (testMode) { 
+//     jsonStringProcess("\{\"word\":\"/AC\\w+\/i\"\}");
+//     // return;
+// }
 
 //====================================================================================
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>    ATTools    <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -200,7 +205,7 @@ function GetGS(req, res) {
 }
 
 function readGS(req, res, filename) {
-    if (!fs.existsSync(filename)) {
+    if (!fs.existsSync(filename)||blnReloadDB) {
         console.log("getGS form Google Sheet")
         GetGSFromGoogle(req, res);
     } else {
@@ -308,85 +313,85 @@ function writeGS(filelContent, FileName) {
 
 //--------------------------   language paraphrase   ---------------------------------
 //------------------------------------------------------------------------------------
-// app.get("/paraphrase", function(req, res) {
-//     const theInputJsonStr = req.query.json;
-//     // console.log(theInputJsonStr);
-//     const theJSON = parseJson(theInputJsonStr);
-//     const Theexample = {
-//         text: theJSON.source,
-//     };
-//     const Source = theJSON.lang0;
-//     const TheTerminateLang = theJSON.lang;
-//     const N = parseInt(theJSON.length);
-//     // console.log("Total number of turns: " + N.toString());
-//     if (N == 0) {
-//         thePath[0] = TheTerminateLang;
-//         GetParaphrase(Theexample, TheTerminateLang, 0, N, res);
-//         return;
-//     } else {
-//         getRandomArrayOfLang(N);
-//     }
-//     thePath.push(TheTerminateLang);
-//     TheLog = [];
-//     let start = {
-//         lang: Source,
-//         text: theJSON.source,
-//     };
-//     TheLog.push(start);
-//     // console.log("Here");
-//     GetParaphrase(Theexample, TheTerminateLang, 0, N, res);
-// });
+app.get("/paraphrase", function(req, res) {
+    const theInputJsonStr = req.query.json;
+    // console.log(theInputJsonStr);
+    const theJSON = parseJson(theInputJsonStr);
+    const Theexample = {
+        text: theJSON.source,
+    };
+    const Source = theJSON.lang0;
+    const TheTerminateLang = theJSON.lang;
+    const N = parseInt(theJSON.length);
+    // console.log("Total number of turns: " + N.toString());
+    if (N == 0) {
+        thePath[0] = TheTerminateLang;
+        GetParaphrase(Theexample, TheTerminateLang, 0, N, res);
+        return;
+    } else {
+        getRandomArrayOfLang(N);
+    }
+    thePath.push(TheTerminateLang);
+    TheLog = [];
+    let start = {
+        lang: Source,
+        text: theJSON.source,
+    };
+    TheLog.push(start);
+    // console.log("Here");
+    GetParaphrase(Theexample, TheTerminateLang, 0, N, res);
+});
 
-// function getRandomArrayOfLang(N) {
-//     let i = 0;
-//     let Max = Math.min(langList.length - 1, N);
-//     let Path = [];
-//     let theSelectedLan = "";
-//     for (i = 0; i < Max; i++) {
-//         do {
-//             theSelectedLang = selectRandom(langList);
-//             Path.push(theSelectedLang);
-//         } while (!Path.includes(theSelectedLang));
-//     }
-//     thePath = Path;
-// }
+function getRandomArrayOfLang(N) {
+    let i = 0;
+    let Max = Math.min(langList.length - 1, N);
+    let Path = [];
+    let theSelectedLan = "";
+    for (i = 0; i < Max; i++) {
+        do {
+            theSelectedLang = selectRandom(langList);
+            Path.push(theSelectedLang);
+        } while (!Path.includes(theSelectedLang));
+    }
+    thePath = Path;
+}
 
-// function selectRandom(TheArray) {
-//     let index = Math.floor(Math.random() * TheArray.length);
-//     return TheArray[index];
-// }
+function selectRandom(TheArray) {
+    let index = Math.floor(Math.random() * TheArray.length);
+    return TheArray[index];
+}
 
-// function GetParaphrase(Text, TerminateLang, i, N, res) {
-//     const TJ = require("translate-json-object")();
-//     TJ.init({
-//         googleApiKey: ThegoogleApiKey,
-//     });
-//     TJ.translate(Text, thePath[i])
-//         .then(function(data) {
-//             let LangObj = {
-//                 lang: thePath[i],
-//                 text: data.text,
-//             };
-//             TheLog.push(LangObj);
-//             // console.log(TheLog);
-//             if (thePath[i] == TerminateLang) {
-//                 res.type("text/html");
-//                 res.status(200).end(data.text);
-//                 return;
-//             }
-//             if (i < thePath.length) {
-//                 const index = Math.floor(Math.random() * langList.length);
-//                 GetParaphrase(data, TerminateLang, i + 1, N, res);
-//                 // console.log(i.toString()+" - "+targetLang+": "+data.text);
-//             } else {
-//                 GetParaphrase(data, TerminateLang, i + 1, N, res); // last one is English
-//                 // console.log(i.toString()+" - "+targetLang+": "+data.text);
-//             }
-//         })
-//         .catch(function(err) {
-//             // console.log("error ", err);
-//         });
-// }
+function GetParaphrase(Text, TerminateLang, i, N, res) {
+    const TJ = require("translate-json-object")();
+    TJ.init({
+        googleApiKey: ThegoogleApiKey,
+    });
+    TJ.translate(Text, thePath[i])
+        .then(function(data) {
+            let LangObj = {
+                lang: thePath[i],
+                text: data.text,
+            };
+            TheLog.push(LangObj);
+            // console.log(TheLog);
+            if (thePath[i] == TerminateLang) {
+                res.type("text/html");
+                res.status(200).end(data.text);
+                return;
+            }
+            if (i < thePath.length) {
+                const index = Math.floor(Math.random() * langList.length);
+                GetParaphrase(data, TerminateLang, i + 1, N, res);
+                // console.log(i.toString()+" - "+targetLang+": "+data.text);
+            } else {
+                GetParaphrase(data, TerminateLang, i + 1, N, res); // last one is English
+                // console.log(i.toString()+" - "+targetLang+": "+data.text);
+            }
+        })
+        .catch(function(err) {
+            // console.log("error ", err);
+        });
+}
 
 //---------------------------------   Get UUID   -------------------------------------
 //------------------------------------------------------------------------------------
@@ -779,33 +784,33 @@ async function TranscribeSound() {
 
 //-------------------------------- Post to GDrive ------------------------------------
 //------------------------------------------------------------------------------------
-// app.post("/PostToDrive", upload.any(), uploadToGoogle);
+app.post("/PostToDrive", upload.any(), uploadToGoogle);
 
-// async function uploadToGoogle(req, res) {
-//     LoadTokenandPost(GDCredential, "1", req, res);
-// }
+async function uploadToGoogle(req, res) {
+    LoadTokenandPost(GDCredential, "1", req, res);
+}
 
-// function LoadTokenandPost(TheLink, sheet, req, res) {
-//     const axios = require("axios");
-//     const SheetURL =
-//         "https://docs.google.com/spreadsheets/d/e/" +
-//         TheLink +
-//         "/pubhtml";
-//     axios
-//         .get(SheetURL)
-//         .then(function(response) {
-//             var outputTable = []
-//             outputTable = RemoveHTML(Table2JSON(response, parseInt(sheet)))
-//             TheUploading(outputTable[1], req, res);
-//         })
-//         .catch(function(error) {
-//             console.log(error);
-//             return ""
-//         })
-//         .then(function() {
-//             return ""
-//         });
-// }
+function LoadTokenandPost(TheLink, sheet, req, res) {
+    const axios = require("axios");
+    const SheetURL =
+        "https://docs.google.com/spreadsheets/d/e/" +
+        TheLink +
+        "/pubhtml";
+    axios
+        .get(SheetURL)
+        .then(function(response) {
+            var outputTable = []
+            outputTable = RemoveHTML(Table2JSON(response, parseInt(sheet)))
+            TheUploading(outputTable[1], req, res);
+        })
+        .catch(function(error) {
+            console.log(error);
+            return ""
+        })
+        .then(function() {
+            return ""
+        });
+}
 
 const imageFilter = function(req, file, cb) {
     // Accept images only
@@ -850,6 +855,16 @@ const imageFilter = function(req, file, cb) {
 
 //====================================================================================
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>    GET    <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//-------------------------- Default tool UI at root ---------------------------------
+//------------------------------------------------------------------------------------
+app.get('/', function(req, res) {                       // Pass main.html when no path in URL
+    try {
+        res.sendFile('main.html', { root: __dirname })
+    } catch (err) {
+        res.status(200).send("Failed to access the regex tool. Please contact Prof. Hu for further information!")
+    }    
+})
+
 //-------------------------- Lookup Keywords List ------------------------------------
 //------------------------------------------------------------------------------------
 app.get("/wordRegex", lookUpRegExProcess);
